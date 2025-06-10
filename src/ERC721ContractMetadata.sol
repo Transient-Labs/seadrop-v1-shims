@@ -1,30 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {
-    ISeaDropTokenContractMetadata
-} from "./interfaces/ISeaDropTokenContractMetadata.sol";
+import {ISeaDropTokenContractMetadata} from "./interfaces/ISeaDropTokenContractMetadata.sol";
 
-import { ERC721A } from "ERC721A/ERC721A.sol";
+import {ERC721A} from "ERC721A/ERC721A.sol";
 
-import { ERC721AConduitPreapproved } from "./lib/ERC721AConduitPreapproved.sol";
+import {ERC721AConduitPreapproved} from "./lib/ERC721AConduitPreapproved.sol";
 
-import { ERC721TransferValidator } from "./lib/ERC721TransferValidator.sol";
+import {ERC721TransferValidator} from "./lib/ERC721TransferValidator.sol";
 
-import {
-    ICreatorToken,
-    ILegacyCreatorToken
-} from "./interfaces/ICreatorToken.sol";
+import {ICreatorToken, ILegacyCreatorToken} from "./interfaces/ICreatorToken.sol";
 
-import { ITransferValidator721 } from "./interfaces/ITransferValidator.sol";
+import {ITransferValidator721} from "./interfaces/ITransferValidator.sol";
 
-import { TwoStepOwnable } from "utility-contracts/TwoStepOwnable.sol";
+import {TwoStepOwnable} from "utility-contracts/TwoStepOwnable.sol";
 
-import { IERC2981 } from "openzeppelin-contracts/interfaces/IERC2981.sol";
+import {IERC2981} from "openzeppelin-contracts/interfaces/IERC2981.sol";
 
-import {
-    IERC165
-} from "openzeppelin-contracts/utils/introspection/IERC165.sol";
+import {IERC165} from "openzeppelin-contracts/utils/introspection/IERC165.sol";
 
 /**
  * @title  ERC721ContractMetadata
@@ -63,10 +56,7 @@ contract ERC721ContractMetadata is
      *      to save contract space from being inlined N times.
      */
     function _onlyOwnerOrSelf() internal view {
-        if (
-            _cast(msg.sender == owner()) | _cast(msg.sender == address(this)) ==
-            0
-        ) {
+        if (_cast(msg.sender == owner()) | _cast(msg.sender == address(this)) == 0) {
             revert OnlyOwner();
         }
     }
@@ -74,9 +64,7 @@ contract ERC721ContractMetadata is
     /**
      * @notice Deploy the token contract with its name and symbol.
      */
-    constructor(string memory name, string memory symbol)
-        ERC721AConduitPreapproved(name, symbol)
-    {}
+    constructor(string memory name, string memory symbol) ERC721AConduitPreapproved(name, symbol) {}
 
     /**
      * @notice Sets the base URI for the token metadata and emits an event.
@@ -119,9 +107,7 @@ contract ERC721ContractMetadata is
      * @param fromTokenId The start token id.
      * @param toTokenId   The end token id.
      */
-    function emitBatchMetadataUpdate(uint256 fromTokenId, uint256 toTokenId)
-        external
-    {
+    function emitBatchMetadataUpdate(uint256 fromTokenId, uint256 toTokenId) external {
         // Ensure the sender is only the owner or contract itself.
         _onlyOwnerOrSelf();
 
@@ -139,16 +125,13 @@ contract ERC721ContractMetadata is
         _onlyOwnerOrSelf();
 
         // Ensure the max supply does not exceed the maximum value of uint64.
-        if (newMaxSupply > 2**64 - 1) {
+        if (newMaxSupply > 2 ** 64 - 1) {
             revert CannotExceedMaxSupplyOfUint64(newMaxSupply);
         }
 
         // Ensure the max supply does not exceed the total minted.
         if (newMaxSupply < _totalMinted()) {
-            revert NewMaxSupplyCannotBeLessThenTotalMinted(
-                newMaxSupply,
-                _totalMinted()
-            );
+            revert NewMaxSupplyCannotBeLessThenTotalMinted(newMaxSupply, _totalMinted());
         }
 
         // Set the new max supply.
@@ -297,11 +280,7 @@ contract ERC721ContractMetadata is
     /**
      * @notice Returns the transfer validation function used.
      */
-    function getTransferValidationFunction()
-        external
-        pure
-        returns (bytes4 functionSignature, bool isViewFunction)
-    {
+    function getTransferValidationFunction() external pure returns (bytes4 functionSignature, bool isViewFunction) {
         functionSignature = ITransferValidator721.validateTransfer.selector;
         isViewFunction = false;
     }
@@ -318,22 +297,16 @@ contract ERC721ContractMetadata is
      * @dev Hook that is called before any token transfer.
      *      This includes minting and burning.
      */
-    function _beforeTokenTransfers(
-        address from,
-        address to,
-        uint256 startTokenId,
-        uint256 /* quantity */
-    ) internal virtual override {
+    function _beforeTokenTransfers(address from, address to, uint256 startTokenId, uint256 /* quantity */ )
+        internal
+        virtual
+        override
+    {
         if (from != address(0) && to != address(0)) {
             // Call the transfer validator if one is set.
             address transferValidator = _transferValidator;
             if (transferValidator != address(0)) {
-                ITransferValidator721(transferValidator).validateTransfer(
-                    msg.sender,
-                    from,
-                    to,
-                    startTokenId
-                );
+                ITransferValidator721(transferValidator).validateTransfer(msg.sender, from, to, startTokenId);
             }
         }
     }
@@ -343,19 +316,10 @@ contract ERC721ContractMetadata is
      *
      * @param interfaceId The interface id to check against.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(IERC165, ERC721A)
-        returns (bool)
-    {
-        return
-            interfaceId == type(IERC2981).interfaceId ||
-            interfaceId == type(ICreatorToken).interfaceId ||
-            interfaceId == type(ILegacyCreatorToken).interfaceId ||
-            interfaceId == 0x49064906 || // ERC-4906
-            super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721A) returns (bool) {
+        return interfaceId == type(IERC2981).interfaceId || interfaceId == type(ICreatorToken).interfaceId
+            || interfaceId == type(ILegacyCreatorToken).interfaceId || interfaceId == 0x49064906 // ERC-4906
+            || super.supportsInterface(interfaceId);
     }
 
     /**

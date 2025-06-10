@@ -3,11 +3,11 @@ pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
 
-import { ERC721SeaDrop } from "../src/ERC721SeaDrop.sol";
+import {ERC721SeaDrop} from "../src/ERC721SeaDrop.sol";
 
-import { ISeaDrop } from "../src/interfaces/ISeaDrop.sol";
+import {ISeaDrop} from "../src/interfaces/ISeaDrop.sol";
 
-import { PublicDrop } from "../src/lib/SeaDropStructs.sol";
+import {PublicDrop} from "../src/lib/SeaDropStructs.sol";
 
 contract DeployAndConfigureExampleToken is Script {
     // Addresses
@@ -29,11 +29,7 @@ contract DeployAndConfigureExampleToken is Script {
         address[] memory allowedSeadrop = new address[](1);
         allowedSeadrop[0] = seadrop;
 
-        ERC721SeaDrop token = new ERC721SeaDrop(
-            "My Example Token",
-            "ExTKN",
-            allowedSeadrop
-        );
+        ERC721SeaDrop token = new ERC721SeaDrop("My Example Token", "ExTKN", allowedSeadrop);
 
         // Configure the token.
         token.setMaxSupply(maxSupply);
@@ -54,7 +50,7 @@ contract DeployAndConfigureExampleToken is Script {
         );
 
         // We are ready, let's mint the first 3 tokens!
-        ISeaDrop(seadrop).mintPublic{ value: mintPrice * 3 }(
+        ISeaDrop(seadrop).mintPublic{value: mintPrice * 3}(
             address(token),
             feeRecipient,
             address(0),

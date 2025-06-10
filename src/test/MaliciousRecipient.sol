@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { SeaDrop } from "../SeaDrop.sol";
+import {SeaDrop} from "../SeaDrop.sol";
 
 contract MaliciousRecipient {
     bool public startAttack;
@@ -11,7 +11,7 @@ contract MaliciousRecipient {
     receive() external payable {
         if (startAttack) {
             startAttack = false;
-            seaDrop.mintPublic{ value: 1 ether }({
+            seaDrop.mintPublic{value: 1 ether}({
                 nftContract: token,
                 feeRecipient: address(this),
                 minterIfNotPayer: address(this),
@@ -29,7 +29,7 @@ contract MaliciousRecipient {
         token = _token;
         seaDrop = _seaDrop;
 
-        _seaDrop.mintPublic{ value: 1 ether }({
+        _seaDrop.mintPublic{value: 1 ether}({
             nftContract: _token,
             feeRecipient: address(this),
             minterIfNotPayer: address(this),
@@ -40,12 +40,14 @@ contract MaliciousRecipient {
         seaDrop = SeaDrop(address(0));
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) public pure returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) public pure returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+    function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data)
+        external
+        returns (bytes4)
+    {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 }

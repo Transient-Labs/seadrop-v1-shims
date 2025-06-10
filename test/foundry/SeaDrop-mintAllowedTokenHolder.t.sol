@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import {TestHelper} from "test/foundry/utils/TestHelper.sol";
 
-import { TestERC721 } from "seadrop/test/TestERC721.sol";
+import {TestERC721} from "seadrop/test/TestERC721.sol";
 
-import { SeaDrop } from "seadrop/SeaDrop.sol";
+import {SeaDrop} from "seadrop/SeaDrop.sol";
 
-import { ERC721SeaDrop } from "seadrop/ERC721SeaDrop.sol";
+import {ERC721SeaDrop} from "seadrop/ERC721SeaDrop.sol";
 
-import {
-    TokenGatedMintParams,
-    TokenGatedDropStage
-} from "seadrop/lib/SeaDropStructs.sol";
+import {TokenGatedMintParams, TokenGatedDropStage} from "seadrop/lib/SeaDropStructs.sol";
 
 contract ERC721DropTest is TestHelper {
     struct FuzzInputsAllowedTokenHolders {
@@ -21,20 +18,12 @@ contract ERC721DropTest is TestHelper {
         address feeRecipient;
     }
 
-    modifier validateAllowedTokenHoldersArgs(
-        FuzzInputsAllowedTokenHolders memory args
-    ) {
+    modifier validateAllowedTokenHoldersArgs(FuzzInputsAllowedTokenHolders memory args) {
         vm.assume(args.numMints > 0 && args.numMints < 20);
         vm.assume(args.minter != address(0) && args.feeRecipient != address(0));
-        vm.assume(
-            args.feeRecipient.code.length == 0 && args.feeRecipient > address(9)
-        );
+        vm.assume(args.feeRecipient.code.length == 0 && args.feeRecipient > address(9));
         vm.assume(args.minter.code.length == 0 && args.minter > address(9));
-        vm.assume(
-            args.minter != args.feeRecipient &&
-                args.minter != creator &&
-                args.feeRecipient != creator
-        );
+        vm.assume(args.minter != args.feeRecipient && args.minter != creator && args.feeRecipient != creator);
         _;
     }
 
@@ -51,10 +40,7 @@ contract ERC721DropTest is TestHelper {
         token.updateCreatorPayoutAddress(address(seadrop), creator);
     }
 
-    function _deployAndMintGateToken(address minter, uint256[] memory tokenIds)
-        internal
-        returns (address)
-    {
+    function _deployAndMintGateToken(address minter, uint256[] memory tokenIds) internal returns (address) {
         // Create new ERC721 for token gating.
         TestERC721 gateToken = new TestERC721();
 
@@ -67,9 +53,10 @@ contract ERC721DropTest is TestHelper {
         return address(gateToken);
     }
 
-    function testMintAllowedTokenHolder(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create the token gated drop stage.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0.1 ether, // mint price
@@ -97,10 +84,7 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
 
         // Calculate the value to send with the transaction.
         uint256 mintValue = args.numMints * dropStage.mintPrice;
@@ -109,20 +93,16 @@ contract ERC721DropTest is TestHelper {
         hoax(args.minter, 100 ether);
 
         // Call mintAllowedTokenHolder as the minter.
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, args.minter, mintParams);
 
         // Check minter token balance increased.
         assertEq(token.balanceOf(args.minter), args.numMints);
     }
 
-    function testMintAllowedTokenHolder_differentPayerThanMinter(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder_differentPayerThanMinter(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create TokenGatedDropStage object.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0.1 ether, // mint price
@@ -149,10 +129,7 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
 
         // Calculate the value to send with the transaction.
         uint256 mintValue = args.numMints * dropStage.mintPrice;
@@ -166,20 +143,16 @@ contract ERC721DropTest is TestHelper {
         hoax(payer, 100 ether);
 
         // Call mintAllowedTokenHolder as the payer.
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, args.minter, mintParams);
 
         // Check minter token balance increased.
         assertEq(token.balanceOf(args.minter), args.numMints);
     }
 
-    function testMintAllowedTokenHolder_revertAlreadyRedeemed(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder_revertAlreadyRedeemed(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create the token gated drop stage.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0.1 ether, // mint price
@@ -206,22 +179,14 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
 
         // Calculate the value to send with the transaction.
         uint256 mintValue = args.numMints * dropStage.mintPrice;
 
         // Call mintAllowedTokenHolder.
         hoax(args.minter, 100 ether);
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, args.minter, mintParams);
 
         // Check minter token balance increased.
         assertEq(token.balanceOf(args.minter), args.numMints);
@@ -239,17 +204,13 @@ contract ERC721DropTest is TestHelper {
         // Attempt to call mintAllowedTokenHolder with the
         // TokenGatedMintParams from the previous call.
         hoax(args.minter, 100 ether);
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, args.minter, mintParams);
     }
 
-    function testMintAllowedTokenHolder_freeMint(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder_freeMint(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create TokenGatedDropStage object with free mint.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0 ether, // mint price
@@ -277,27 +238,20 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
 
         // Call mintAllowedTokenHolder.
         hoax(args.minter, 100 ether);
-        seadrop.mintAllowedTokenHolder(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder(address(token), args.feeRecipient, args.minter, mintParams);
 
         // Check minter token balance increased.
         assertEq(token.balanceOf(args.minter), args.numMints);
     }
 
-    function testMintAllowedTokenHolder_revertNotOwner(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder_revertNotOwner(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create TokenGatedDropStage object.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0.1 ether, // mint price
@@ -325,10 +279,7 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
 
         // Calculate the value to send with the transaction.
         uint256 mintValue = args.numMints * dropStage.mintPrice;
@@ -342,25 +293,16 @@ contract ERC721DropTest is TestHelper {
         // Expect the call to fail since the notOwner address does not own
         // the allowed NFT tokens.
         vm.expectRevert(
-            abi.encodeWithSelector(
-                TokenGatedNotTokenOwner.selector,
-                address(token),
-                gateToken,
-                tokenIds[0]
-            )
+            abi.encodeWithSelector(TokenGatedNotTokenOwner.selector, address(token), gateToken, tokenIds[0])
         );
         // Call mintAllowedTokenHolder.
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            notOwner,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, notOwner, mintParams);
     }
 
-    function testMintAllowedTokenHolder_revertFeeRecipientNotAllowed(
-        FuzzInputsAllowedTokenHolders memory args
-    ) public validateAllowedTokenHoldersArgs(args) {
+    function testMintAllowedTokenHolder_revertFeeRecipientNotAllowed(FuzzInputsAllowedTokenHolders memory args)
+        public
+        validateAllowedTokenHoldersArgs(args)
+    {
         // Create TokenGatedDropStage object with restricted fee recipients.
         TokenGatedDropStage memory dropStage = TokenGatedDropStage(
             0.1 ether, // mint price
@@ -388,25 +330,15 @@ contract ERC721DropTest is TestHelper {
         seadrop.updateTokenGatedDrop(gateToken, dropStage);
 
         // Keep track of the mint params.
-        TokenGatedMintParams memory mintParams = TokenGatedMintParams(
-            gateToken,
-            tokenIds
-        );
+        TokenGatedMintParams memory mintParams = TokenGatedMintParams(gateToken, tokenIds);
         // Calculate the value to send with the transaction.
         uint256 mintValue = args.numMints * dropStage.mintPrice;
 
         // Expect the call to fail since the passed in fee recipient
         // is not allowed.
-        vm.expectRevert(
-            abi.encodeWithSelector(FeeRecipientNotAllowed.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(FeeRecipientNotAllowed.selector));
         // Attempt to call mintAllowedTokenHolder with a fee recipient.
         hoax(args.minter, 100 ether);
-        seadrop.mintAllowedTokenHolder{ value: mintValue }(
-            address(token),
-            args.feeRecipient,
-            args.minter,
-            mintParams
-        );
+        seadrop.mintAllowedTokenHolder{value: mintValue}(address(token), args.feeRecipient, args.minter, mintParams);
     }
 }

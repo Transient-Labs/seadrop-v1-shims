@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { ERC721SeaDrop } from "../ERC721SeaDrop.sol";
+import {ERC721SeaDrop} from "../ERC721SeaDrop.sol";
 
 /**
  * @title  ERC721SeaDropRandomOffset
@@ -37,11 +37,9 @@ contract ERC721SeaDropRandomOffset is ERC721SeaDrop {
      * @notice Deploy the token contract with its name, symbol,
      *         and allowed SeaDrop addresses.
      */
-    constructor(
-        string memory name,
-        string memory symbol,
-        address[] memory allowedSeaDrop
-    ) ERC721SeaDrop(name, symbol, allowedSeaDrop) {}
+    constructor(string memory name, string memory symbol, address[] memory allowedSeaDrop)
+        ERC721SeaDrop(name, symbol, allowedSeaDrop)
+    {}
 
     /**
      * @notice Set the random offset, for a fair metadata reveal. Only callable
@@ -68,10 +66,7 @@ contract ERC721SeaDropRandomOffset is ERC721SeaDrop {
         // block.difficulty returns PREVRANDAO on Ethereum post-merge
         // NOTE: do not use this on other chains
         // randomOffset returns between 1 and MAX_SUPPLY
-        randomOffset =
-            (uint256(keccak256(abi.encode(block.difficulty))) %
-                (maxSupply - 1)) +
-            1;
+        randomOffset = (uint256(keccak256(abi.encode(block.difficulty))) % (maxSupply - 1)) + 1;
 
         // Set revealed to true.
         revealed = _REVEALED_TRUE;
@@ -83,12 +78,7 @@ contract ERC721SeaDropRandomOffset is ERC721SeaDrop {
      *
      * @param tokenId The token id
      */
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
         if (!_exists(tokenId)) {
             revert URIQueryForNonexistentToken();
         }
@@ -104,14 +94,7 @@ contract ERC721SeaDropRandomOffset is ERC721SeaDrop {
         } else {
             // If the baseURI is set and the collection is revealed,
             // return the tokenURI offset by the randomOffset.
-            return
-                string.concat(
-                    base,
-                    _toString(
-                        ((tokenId + randomOffset) % _maxSupply) +
-                            _startTokenId()
-                    )
-                );
+            return string.concat(base, _toString(((tokenId + randomOffset) % _maxSupply) + _startTokenId()));
         }
     }
 }

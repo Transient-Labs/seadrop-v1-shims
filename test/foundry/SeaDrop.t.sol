@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import {TestHelper} from "test/foundry/utils/TestHelper.sol";
 
-import { ERC721SeaDrop } from "seadrop/ERC721SeaDrop.sol";
+import {ERC721SeaDrop} from "seadrop/ERC721SeaDrop.sol";
 
-import { TestERC721 } from "seadrop/test/TestERC721.sol";
+import {TestERC721} from "seadrop/test/TestERC721.sol";
 
 import {
     AllowListData,
@@ -52,28 +52,17 @@ contract TestSeaDrop is TestHelper {
     function testUpdateDropURI_onlyERC721SeaDrop() public {
         string memory uri = "https://example.com/";
         vm.startPrank(address(standard721Token));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OnlyINonFungibleSeaDropToken.selector,
-                address(standard721Token)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(OnlyINonFungibleSeaDropToken.selector, address(standard721Token)));
         seadrop.updateDropURI(uri);
     }
 
     function testUpdateSigners_noNullAddress() public {
         vm.startPrank(address(token));
-        vm.expectRevert(
-            abi.encodeWithSelector(SignerCannotBeZeroAddress.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(SignerCannotBeZeroAddress.selector));
         seadrop.updateSignedMintValidationParams(address(0), addSigned);
     }
 
-    function testupdateSignedMintValidationParams(
-        address signer1,
-        address signer2,
-        address signer3
-    ) public {
+    function testupdateSignedMintValidationParams(address signer1, address signer2, address signer3) public {
         vm.assume(signer1 != address(0));
         vm.assume(signer2 != address(0));
         vm.assume(signer3 != address(0));
@@ -87,48 +76,18 @@ contract TestSeaDrop is TestHelper {
         address[] memory signers = seadrop.getSigners(address(token));
         assertEq(signers.length, 1);
         assertEq(signers[0], signer1);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 0);
 
         seadrop.updateSignedMintValidationParams(signer2, addSigned);
         signers = seadrop.getSigners(address(token));
         assertEq(signers.length, 2);
         assertEq(signers[0], signer1);
         assertEq(signers[1], signer2);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 0);
 
         seadrop.updateSignedMintValidationParams(signer3, addSigned);
         signers = seadrop.getSigners(address(token));
@@ -136,24 +95,9 @@ contract TestSeaDrop is TestHelper {
         assertEq(signers[0], signer1);
         assertEq(signers[1], signer2);
         assertEq(signers[2], signer3);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 1);
 
         // remove signer after
         seadrop.updateSignedMintValidationParams(signer2, removeSigned);
@@ -161,76 +105,27 @@ contract TestSeaDrop is TestHelper {
         assertEq(signers.length, 2);
         assertEq(signers[0], signer1);
         assertEq(signers[1], signer3);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 1);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 1);
 
         seadrop.updateSignedMintValidationParams(signer1, removeSigned);
         signers = seadrop.getSigners(address(token));
         assertEq(signers.length, 1);
         assertEq(signers[0], signer3);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 1);
 
         seadrop.updateSignedMintValidationParams(signer3, removeSigned);
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer1)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer2)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getSignedMintValidationParams(address(token), signer3)
-                .maxMaxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer1).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer2).maxMaxTotalMintableByWallet, 0);
+        assertEq(seadrop.getSignedMintValidationParams(address(token), signer3).maxMaxTotalMintableByWallet, 0);
         signers = seadrop.getSigners(address(token));
         assertEq(signers.length, 0);
     }
 
-    function testUpdateAllowedFeeRecipient(
-        address recipient1,
-        address recipient2,
-        address recipient3
-    ) public {
+    function testUpdateAllowedFeeRecipient(address recipient1, address recipient2, address recipient3) public {
         vm.assume(recipient1 != address(0));
         vm.assume(recipient2 != address(0));
         vm.assume(recipient3 != address(0));
@@ -241,35 +136,21 @@ contract TestSeaDrop is TestHelper {
         vm.startPrank(address(token));
 
         seadrop.updateAllowedFeeRecipient(recipient1, true);
-        address[] memory signers = seadrop.getAllowedFeeRecipients(
-            address(token)
-        );
+        address[] memory signers = seadrop.getAllowedFeeRecipients(address(token));
         assertEq(signers.length, 1);
         assertEq(signers[0], recipient1);
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
 
         seadrop.updateAllowedFeeRecipient(recipient2, true);
         signers = seadrop.getAllowedFeeRecipients(address(token));
         assertEq(signers.length, 2);
         assertEq(signers[0], recipient1);
         assertEq(signers[1], recipient2);
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
 
         seadrop.updateAllowedFeeRecipient(recipient3, true);
         signers = seadrop.getAllowedFeeRecipients(address(token));
@@ -277,15 +158,9 @@ contract TestSeaDrop is TestHelper {
         assertEq(signers[0], recipient1);
         assertEq(signers[1], recipient2);
         assertEq(signers[2], recipient3);
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
 
         // remove signer after
         seadrop.updateAllowedFeeRecipient(recipient2, false);
@@ -293,58 +168,30 @@ contract TestSeaDrop is TestHelper {
         assertEq(signers.length, 2);
         assertEq(signers[0], recipient1);
         assertEq(signers[1], recipient3);
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
 
         seadrop.updateAllowedFeeRecipient(recipient1, false);
         signers = seadrop.getAllowedFeeRecipients(address(token));
         assertEq(signers.length, 1);
         assertEq(signers[0], recipient3);
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertTrue(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertTrue(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
 
         seadrop.updateAllowedFeeRecipient(recipient3, false);
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
         signers = seadrop.getAllowedFeeRecipients(address(token));
         assertEq(signers.length, 0);
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient1)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient2)
-        );
-        assertFalse(
-            seadrop.getFeeRecipientIsAllowed(address(token), recipient3)
-        );
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient1));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient2));
+        assertFalse(seadrop.getFeeRecipientIsAllowed(address(token), recipient3));
     }
 
-    function testUpdateTokenGatedDrop(
-        address token1,
-        address token2,
-        address token3
-    ) public {
+    function testUpdateTokenGatedDrop(address token1, address token2, address token3) public {
         vm.assume(token1 != address(0));
         vm.assume(token2 != address(0));
         vm.assume(token3 != address(0));
@@ -358,53 +205,21 @@ contract TestSeaDrop is TestHelper {
         vm.startPrank(address(token));
 
         seadrop.updateTokenGatedDrop(token1, add);
-        address[] memory tokens = seadrop.getTokenGatedAllowedTokens(
-            address(token)
-        );
+        address[] memory tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 1);
         assertEq(tokens[0], token1);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 0);
 
         seadrop.updateTokenGatedDrop(token2, add);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 2);
         assertEq(tokens[0], token1);
         assertEq(tokens[1], token2);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 0);
 
         seadrop.updateTokenGatedDrop(token3, add);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
@@ -412,121 +227,41 @@ contract TestSeaDrop is TestHelper {
         assertEq(tokens[0], token1);
         assertEq(tokens[1], token2);
         assertEq(tokens[2], token3);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 1);
 
         // test update
         seadrop.updateTokenGatedDrop(token2, update);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 3);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            2
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 2);
         // remove signer after
         seadrop.updateTokenGatedDrop(token2, remove);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 2);
         assertEq(tokens[0], token1);
         assertEq(tokens[1], token3);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            1
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 1);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 1);
 
         seadrop.updateTokenGatedDrop(token1, remove);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 1);
         assertEq(tokens[0], token3);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            1
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 1);
 
         seadrop.updateTokenGatedDrop(token3, remove);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 0);
         tokens = seadrop.getTokenGatedAllowedTokens(address(token));
         assertEq(tokens.length, 0);
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token1)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token2)
-                .maxTotalMintableByWallet,
-            0
-        );
-        assertEq(
-            seadrop
-                .getTokenGatedDrop(address(token), token3)
-                .maxTotalMintableByWallet,
-            0
-        );
+        assertEq(seadrop.getTokenGatedDrop(address(token), token1).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token2).maxTotalMintableByWallet, 0);
+        assertEq(seadrop.getTokenGatedDrop(address(token), token3).maxTotalMintableByWallet, 0);
     }
 }

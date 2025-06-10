@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { ERC721SeaDrop } from "../ERC721SeaDrop.sol";
+import {ERC721SeaDrop} from "../ERC721SeaDrop.sol";
 
 /**
  * @title  ERC721SeaDropPausable
@@ -23,11 +23,9 @@ contract ERC721SeaDropPausable is ERC721SeaDrop {
      * @notice Deploy the token contract with its name, symbol,
      *         and allowed SeaDrop addresses.
      */
-    constructor(
-        string memory name,
-        string memory symbol,
-        address[] memory allowedSeaDrop
-    ) ERC721SeaDrop(name, symbol, allowedSeaDrop) {
+    constructor(string memory name, string memory symbol, address[] memory allowedSeaDrop)
+        ERC721SeaDrop(name, symbol, allowedSeaDrop)
+    {
         emit TransfersPausedChanged(transfersPaused);
     }
 
@@ -36,11 +34,7 @@ contract ERC721SeaDropPausable is ERC721SeaDrop {
         emit TransfersPausedChanged(paused);
     }
 
-    function setApprovalForAll(address operator, bool approved)
-        public
-        virtual
-        override
-    {
+    function setApprovalForAll(address operator, bool approved) public virtual override {
         if (transfersPaused) {
             revert TransfersPaused();
         }
@@ -54,12 +48,11 @@ contract ERC721SeaDropPausable is ERC721SeaDrop {
         super.approve(to, tokenId);
     }
 
-    function _beforeTokenTransfers(
-        address from,
-        address to,
-        uint256 startTokenId,
-        uint256 quantity
-    ) internal virtual override {
+    function _beforeTokenTransfers(address from, address to, uint256 startTokenId, uint256 quantity)
+        internal
+        virtual
+        override
+    {
         if (from != address(0) && transfersPaused) {
             revert TransfersPaused();
         }

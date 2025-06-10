@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { ICreatorToken } from "../interfaces/ICreatorToken.sol";
+import {ICreatorToken} from "../interfaces/ICreatorToken.sol";
 
 /**
  * @title  ERC721TransferValidator

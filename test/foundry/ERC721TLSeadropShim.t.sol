@@ -5,7 +5,7 @@ import {TestHelper} from "test/foundry/utils/TestHelper.sol";
 
 import {SeaDrop} from "seadrop/SeaDrop.sol";
 
-import {ERC721SeaDrop} from "seadrop/ERC721SeaDrop.sol";
+import {ERC721TLSeadropShim} from "seadrop/ERC721TLSeadropShim.sol";
 
 import {INonFungibleSeaDropToken} from "seadrop/interfaces/INonFungibleSeaDropToken.sol";
 
@@ -13,21 +13,28 @@ import {PublicDrop} from "seadrop/lib/SeaDropStructs.sol";
 
 import {MaliciousRecipient} from "seadrop/test/MaliciousRecipient.sol";
 
-contract ERC721SeaDropMintPublicTest is TestHelper {
+import {MockERC721TL} from "./utils/MockERC721TL.sol";
+
+contract ERC721TLSeadropShimTest is TestHelper {
     MaliciousRecipient attacker;
+    ERC721TLSeadropShim public shim;
+    MockERC721TL public erc721tl;
 
     function setUp() public {
         attacker = new MaliciousRecipient();
-        // Deploy the ERC721SeaDrop token.
+        // Deploy the 1155 shim
+        erc721tl = new MockERC721TL();
+
+        // Deploy the shim contract.
         address[] memory allowedSeaDrop = new address[](1);
         allowedSeaDrop[0] = address(seadrop);
-        token = new ERC721SeaDrop("", "", allowedSeaDrop);
+        shim = new ERC721TLSeadropShim("", "", address(erc721tl), "uri", allowedSeaDrop);
 
         // Set the max supply to 1000.
-        token.setMaxSupply(1000);
+        shim.setMaxSupply(1000);
 
         // Set the creator payout address.
-        token.updateCreatorPayoutAddress(address(seadrop), creator);
+        shim.updateCreatorPayoutAddress(address(seadrop), creator);
 
         // Create the public drop stage.
         PublicDrop memory publicDrop = PublicDrop(
@@ -39,11 +46,8 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
             false // if false, allow any fee recipient
         );
 
-        // Impersonate the token contract.
-        vm.prank(address(token));
-
-        // Set the public drop for the token contract.
-        seadrop.updatePublicDrop(publicDrop);
+        // Set the public drop for the shim contract.
+        shim.updatePublicDrop(address(seadrop), publicDrop);
     }
 
     function testMintPublicReenter() public payable {
@@ -57,7 +61,7 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
             false // if false, allow any fee recipient
                 // If true, then only the fee recipient can perform the attack
         );
-        vm.prank(address(token));
+        vm.prank(address(shim));
         seadrop.updatePublicDrop(publicDrop);
 
         assert(!attacker.startAttack());
@@ -65,16 +69,16 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
         attacker.setStartAttack{value: 10 ether}();
         assert(attacker.startAttack());
 
-        assertEq(token.balanceOf(address(attacker)), 0);
-        assertEq(uint256(seadrop.getPublicDrop(address(token)).maxTotalMintableByWallet), 1);
+        assertEq(shim.balanceOf(address(attacker)), 0);
+        assertEq(uint256(seadrop.getPublicDrop(address(shim)).maxTotalMintableByWallet), 1);
 
         // expect fail on reentrancy
         vm.expectRevert("ETH_TRANSFER_FAILED");
-        attacker.attack(seadrop, address(token));
+        attacker.attack(seadrop, address(shim));
     }
 
     function testMintPublic(FuzzInputs memory args) public validateArgs(args) {
-        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(token));
+        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(shim));
 
         uint256 mintValue = args.numMints * publicDrop.mintPrice;
 
@@ -84,10 +88,16 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
         uint256 preFeeRecipientBalance = args.feeRecipient.balance;
         uint256 preCreatorBalance = creator.balance;
 
-        seadrop.mintPublic{value: mintValue}(address(token), args.feeRecipient, args.minter, args.numMints);
+        seadrop.mintPublic{value: mintValue}(address(shim), args.feeRecipient, args.minter, args.numMints);
 
-        // Check minter token balance increased.
-        assertEq(token.balanceOf(args.minter), args.numMints);
+        // Check minter shim balance increased.
+        assertEq(erc721tl.balanceOf(args.minter), args.numMints);
+        assertEq(erc721tl.ownerOf(1), args.minter);
+        assertEq(shim.numMinted(), args.numMints);
+        (uint256 minterNumMinted, uint256 currentTotalSupply, uint256 maxSupply) = shim.getMintStats(args.minter);
+        assertEq(minterNumMinted, args.numMints);
+        assertEq(currentTotalSupply, args.numMints);
+        assertEq(maxSupply, shim.maxSupply());
 
         // Check minter ether balance decreased.
         assertEq(preMinterBalance - mintValue, args.minter.balance);
@@ -102,14 +112,14 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
     }
 
     function testMintPublic_incorrectPayment(FuzzInputs memory args) public validateArgs(args) {
-        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(token));
+        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(shim));
         uint256 mintValue = args.numMints * publicDrop.mintPrice;
 
         vm.expectRevert(abi.encodeWithSelector(IncorrectPayment.selector, 1, mintValue));
 
         hoax(args.minter, 100 ether);
 
-        seadrop.mintPublic{value: 1 wei}(address(token), args.feeRecipient, args.minter, args.numMints);
+        seadrop.mintPublic{value: 1 wei}(address(shim), args.feeRecipient, args.minter, args.numMints);
     }
 
     function testMintPublic_freeMint(FuzzInputs memory args) public validateArgs(args) {
@@ -123,25 +133,26 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
             false // if false, allow any fee recipient
         );
 
-        vm.prank(address(token));
+        vm.prank(address(shim));
         // Set the public drop for the erc721 contract.
         seadrop.updatePublicDrop(publicDrop);
 
         vm.prank(args.minter);
 
-        seadrop.mintPublic(address(token), args.feeRecipient, args.minter, args.numMints);
+        seadrop.mintPublic(address(shim), args.feeRecipient, args.minter, args.numMints);
 
-        // Check minter token balance increased.
-        assertEq(token.balanceOf(args.minter), args.numMints);
+        // Check minter shim balance increased.
+        assertEq(erc721tl.balanceOf(args.minter), args.numMints);
+        assertEq(erc721tl.ownerOf(1), args.minter);
     }
 
     function testMintPublic_differentPayerThanMinter(FuzzInputs memory args) public validateArgs(args) {
-        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(token));
+        PublicDrop memory publicDrop = seadrop.getPublicDrop(address(shim));
 
         address payer = makeAddr("payer");
 
         // Allow the payer.
-        token.updatePayer(address(seadrop), payer, true);
+        shim.updatePayer(address(seadrop), payer, true);
 
         vm.assume(payer != creator && payer != args.minter && payer != args.feeRecipient);
 
@@ -153,10 +164,11 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
         uint256 preFeeRecipientBalance = args.feeRecipient.balance;
         uint256 preCreatorBalance = creator.balance;
 
-        seadrop.mintPublic{value: mintValue}(address(token), args.feeRecipient, args.minter, args.numMints);
+        seadrop.mintPublic{value: mintValue}(address(shim), args.feeRecipient, args.minter, args.numMints);
 
-        // Check minter token balance increased.
-        assertEq(token.balanceOf(args.minter), args.numMints);
+        // Check minter shim balance increased.
+        assertEq(erc721tl.balanceOf(args.minter), args.numMints);
+        assertEq(erc721tl.ownerOf(1), args.minter);
 
         // Check payer ether balance decreased.
         assertEq(prePayerBalance - mintValue, payer.balance);
@@ -172,6 +184,6 @@ contract ERC721SeaDropMintPublicTest is TestHelper {
 
     function testMintSeaDrop_revertNonSeaDrop(FuzzInputs memory args) public validateArgs(args) {
         vm.expectRevert(INonFungibleSeaDropToken.OnlyAllowedSeaDrop.selector);
-        token.mintSeaDrop(args.minter, args.numMints);
+        shim.mintSeaDrop(args.minter, args.numMints);
     }
 }

@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import {TestHelper} from "test/foundry/utils/TestHelper.sol";
 
-import {
-    ERC721SeaDropPausable
-} from "seadrop/extensions/ERC721SeaDropPausable.sol";
+import {ERC721SeaDropPausable} from "seadrop/extensions/ERC721SeaDropPausable.sol";
 
-import { TwoStepOwnable } from "utility-contracts/TwoStepOwnable.sol";
+import {TwoStepOwnable} from "utility-contracts/TwoStepOwnable.sol";
 
 contract ERC721SeaDropPausableWithMint is ERC721SeaDropPausable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        address[] memory allowedSeaDrop
-    ) ERC721SeaDropPausable(name, symbol, allowedSeaDrop) {}
+    constructor(string memory name, string memory symbol, address[] memory allowedSeaDrop)
+        ERC721SeaDropPausable(name, symbol, allowedSeaDrop)
+    {}
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
@@ -84,12 +80,7 @@ contract ERC721SeaDropSoulboundTest is TestHelper {
         assertEq(token_.transfersPaused(), true);
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) public pure returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) public pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
